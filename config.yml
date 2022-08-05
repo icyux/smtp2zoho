@@ -1,0 +1,7 @@
+smtpListen: "localhost:2500"
+
+ZohoClientID: 1000.ABCDEFGHIJKLMNOPQRSTUVWXYZ0123
+ZohoClientSecret: 0123456789abcdef0123456789abcdef0123456789
+ZohoUserID: "7000000000000000001"
+ZohoRefreshToken: 1000.0123456789abcdef0123456789abcdef.0123456789abcdef0123456789abcdef
+ZohoMailAddr: sender@example.com
