@@ -74,7 +74,15 @@ Worth Noticing
 ---
 
 - **DO NOT** expose the SMTP server in public network. It is weak, non-standard SMTP session could make it panicked. And currently,  there's no authentication option provided. 
-
+- If you want to specify sender display name, use `From` header in raw mail data. Here are some examples:
+```text
+# normal
+From: Specified Name <someone@example.com>
+# UTF-8 encoded
+From: =?UTF-8?B?5Y+R6YCB6ICF?= <someone@example.com>
+# if you don't want to specify it, just leave it blank
+From: <someone@example.com>
+```
 - `Subject` header only allow formats below:
 ```text
 Subject: TestSubject
