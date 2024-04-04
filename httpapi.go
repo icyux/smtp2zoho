@@ -31,8 +31,12 @@ func SendMail(mail *Mail) error {
 		"https://mail.zoho.com/api/accounts/%s/messages",
 		Uid,
 	)
+	fromAddr := SelfMail
+	if mail.SenderName != "" {
+		fromAddr = fmt.Sprintf("%s <%s>", mail.SenderName, SelfMail)
+	}
 	body := map[string]string{
-		"fromAddress": SelfMail,
+		"fromAddress": fromAddr,
 		"toAddress":   mail.Recver,
 		"subject":     mail.Subject,
 		"content":     mail.Content,

@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"regexp"
 	"strings"
 )
 
 type Mail struct {
-	Recver, ContentType, Subject, Content string
+	Recver, ContentType, SenderName, Subject, Content string
 }
 
 func splitLines(data []byte, atEOF bool) (int, []byte, error) {
@@ -111,23 +112,23 @@ func ParseSmtp(conn net.Conn) (*Mail, error) {
 
 	// parse mail info
 	rawSubject := headers["subject"]
-	var subject string
-	if rawSubject[0:2] == "=?" {
-		// accept UTF-8 with base64 encoding
-		length := len(rawSubject)
-		encoded := rawSubject[10 : length-2]
-		b, err := base64.StdEncoding.DecodeString(encoded)
-		if err != nil {
-			io.WriteString(conn, "503 Invalid mail format\r\n")
-			conn.Close()
-			return nil, ErrParsingFailed
-		}
-		subject = string(b)
-	} else {
-		subject = rawSubject
+	subject, err := parseHeaderEncodedValue(rawSubject)
+	if err != nil {
+		io.WriteString(conn, "503 Invalid mail format\r\n")
+		conn.Close()
+		return nil, ErrParsingFailed
 	}
 
 	contentType := headers["content-type"]
+
+	senderName := ""
+	from := headers["from"]
+	senderNamePattern := regexp.MustCompile(`^(\S.*?)\s*?<(?:.+)>$`)
+	matches := senderNamePattern.FindStringSubmatch(from)
+	if len(matches) == 2 {
+		rawSenderName := matches[1]
+		senderName, _ = parseHeaderEncodedValue(rawSenderName)
+	}
 
 	// resp
 	io.WriteString(conn, "250 Message sent\r\n")
@@ -140,8 +141,27 @@ func ParseSmtp(conn net.Conn) (*Mail, error) {
 	mail := &Mail{
 		Recver:      recver,
 		ContentType: contentType,
+		SenderName:  senderName,
 		Subject:     subject,
 		Content:     content,
 	}
 	return mail, nil
+}
+
+func parseHeaderEncodedValue(raw string) (string, error) {
+	var decoded string
+	if len(raw) >= 12 && raw[0:2] == "=?" {
+		// accept UTF-8 with base64 encoding
+		length := len(raw)
+		encoded := raw[10 : length-2]
+		b, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			return "", ErrParsingFailed
+		}
+		decoded = string(b)
+	} else {
+		decoded = raw
+	}
+
+	return decoded, nil
 }
