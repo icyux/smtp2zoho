@@ -34,7 +34,9 @@ func ParseSmtp(conn net.Conn) (*Mail, error) {
 
 	// recv HELO
 	for {
-		scanner.Scan()
+		if !scanner.Scan() {
+			return nil, io.EOF
+		}
 		cmd := strings.Split(scanner.Text(), " ")
 		major := strings.ToUpper(cmd[0])
 		if len(cmd) < 2 || major != "HELO" {
